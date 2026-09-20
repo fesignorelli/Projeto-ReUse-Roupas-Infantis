@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { Product, ProductCard } from "./ProductCard";
+import { ProductCard } from "./ProductCard";
 
 const FILTERS = [
   "Todos",
@@ -12,7 +12,7 @@ const FILTERS = [
   "Novas",
 ];
 
-const PRODUCTS: Product[] = [
+const PRODUCTS = [
   {
     id: "body-listrado-branco",
     title: "Body Listrado Branco",
@@ -82,18 +82,23 @@ const PRODUCTS: Product[] = [
   },
 ];
 
-type NewArrivalsSectionProps = {
-  onPressVerTodas?: () => void;
-  onPressFavorite?: (id: string) => void;
-  onPressSolicitarTroca?: (id: string) => void;
-};
-
 export function NewArrivalsSection({
+  products = [],
   onPressVerTodas,
   onPressFavorite,
   onPressSolicitarTroca,
-}: NewArrivalsSectionProps) {
+}) {
   const [activeFilter, setActiveFilter] = useState("Todos");
+
+  const allProducts = [
+    ...products,
+    ...PRODUCTS.filter(
+      (exampleProduct) =>
+        !products.some(
+          (product) => product.id === exampleProduct.id
+        )
+    ),
+  ];
 
   return (
     <View className="bg-cream py-10">
@@ -106,6 +111,7 @@ export function NewArrivalsSection({
           <Text className="font-heading text-xl text-ink-dark">
             Novas Chegadas
           </Text>
+
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={onPressVerTodas}
@@ -114,6 +120,7 @@ export function NewArrivalsSection({
             <Text className="font-headingMedium text-sm text-pink-dark">
               Ver todas
             </Text>
+
             <Text className="font-headingMedium text-sm text-pink-dark">
               {"›"}
             </Text>
@@ -155,7 +162,7 @@ export function NewArrivalsSection({
       </ScrollView>
 
       <View className="px-6">
-        {PRODUCTS.map((product) => (
+        {allProducts.map((product) => (
           <ProductCard
             key={product.id}
             product={product}
@@ -174,6 +181,7 @@ export function NewArrivalsSection({
               Ver todas as peças disponíveis
             </Text>
           </TouchableOpacity>
+
           <Text className="absolute -bottom-4 left-2 text-lg text-mint-medium">
             {"✦"}
           </Text>

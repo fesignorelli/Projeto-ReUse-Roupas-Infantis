@@ -11,11 +11,7 @@ const FILTERS = [
   "Novas Chegadas",
 ];
 
-type FiltersBarProps = {
-  onChangeFilter?: (filter: string) => void;
-};
-
-export function FiltersBar({ onChangeFilter }: FiltersBarProps) {
+export function FiltersBar({ onChangeFilter }) {
   const [activeFilter, setActiveFilter] = useState("Todos");
 
   return (
@@ -37,7 +33,9 @@ export function FiltersBar({ onChangeFilter }: FiltersBarProps) {
               onChangeFilter?.(filter);
             }}
             className={`items-center justify-center rounded-full px-4 py-2 outline-none ${
-              isActive ? "bg-pink-dark" : "border border-neutralDivider bg-white"
+              isActive
+                ? "bg-pink-dark"
+                : "border border-neutralDivider bg-white"
             }`}
           >
             <Text

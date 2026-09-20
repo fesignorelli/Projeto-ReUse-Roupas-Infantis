@@ -6,6 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permita que o ReUse use a câmera para fotografar as peças cadastradas."
+        }
+      ]
+    ],
     "ios": {
       "supportsTablet": true
     },

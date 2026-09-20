@@ -1,14 +1,6 @@
 import { Text, View } from "react-native";
 
-type Step = {
-  number: string;
-  title: string;
-  description: string;
-  cardClassName: string;
-  badgeClassName: string;
-};
-
-const STEPS: Step[] = [
+const STEPS = [
   {
     number: "01",
     title: "Cadastre suas peças",
@@ -49,13 +41,17 @@ export function HowItWorksSection() {
       <Text className="text-center font-body text-sm italic text-pink-dark">
         simples assim
       </Text>
+
       <Text className="mt-2 text-center font-heading text-2xl text-ink-dark">
         Como funciona a troca?
       </Text>
 
       <View className="mt-8 gap-5">
         {STEPS.map((step) => (
-          <View key={step.number} className={`rounded-3xl p-6 ${step.cardClassName}`}>
+          <View
+            key={step.number}
+            className={`rounded-3xl p-6 ${step.cardClassName}`}
+          >
             <View
               className={`h-11 w-11 items-center justify-center rounded-2xl ${step.badgeClassName}`}
             >
@@ -63,9 +59,11 @@ export function HowItWorksSection() {
                 {step.number}
               </Text>
             </View>
+
             <Text className="mt-4 font-heading text-lg text-ink-dark">
               {step.title}
             </Text>
+
             <Text className="mt-2 font-body text-sm leading-5 text-ink-mid">
               {step.description}
             </Text>

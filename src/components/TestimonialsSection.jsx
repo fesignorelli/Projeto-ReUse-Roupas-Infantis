@@ -1,14 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
-type Testimonial = {
-  id: string;
-  quote: string;
-  author: string;
-  location: string;
-};
-
-const TESTIMONIALS: Testimonial[] = [
+const TESTIMONIALS = [
   {
     id: "ana-paula-m",
     quote:
@@ -39,6 +32,7 @@ export function TestimonialsSection() {
         <Text className="font-body text-sm italic text-pink-dark">
           famílias felizes
         </Text>
+
         <Text className="mt-1 font-heading text-2xl text-ink-dark">
           Amadas pelos pais
         </Text>
@@ -53,14 +47,22 @@ export function TestimonialsSection() {
             <Text className="text-base tracking-widest text-pink-medium">
               ★★★★★
             </Text>
+
             <Text className="mt-3 font-body text-sm italic leading-5 text-ink-mid">
-              "{testimonial.quote}"
+              &quot;{testimonial.quote}&quot;
             </Text>
+
             <Text className="mt-4 font-headingMedium text-sm text-ink-dark">
               {testimonial.author}
             </Text>
+
             <View className="mt-1 flex-row items-center gap-1">
-              <Ionicons name="location-outline" size={14} color="#888888" />
+              <Ionicons
+                name="location-outline"
+                size={14}
+                color="#888888"
+              />
+
               <Text className="font-body text-xs text-ink-light">
                 {testimonial.location}
               </Text>

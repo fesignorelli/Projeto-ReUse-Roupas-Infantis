@@ -1,16 +1,13 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-type SeasonCard = {
-  id: string;
-  title: string;
-  imageUrl: string;
-  gradientColors: [string, string, string];
-  titleClassName: string;
-  buttonClassName: string;
-};
-
-const SEASONS: SeasonCard[] = [
+const SEASONS = [
   {
     id: "verao-colorido",
     title: "Verão Colorido",
@@ -65,15 +62,10 @@ const SEASONS: SeasonCard[] = [
   },
 ];
 
-type SeasonalCollectionsSectionProps = {
-  onPressVerTodas?: () => void;
-  onExploreSeason?: (id: string) => void;
-};
-
 export function SeasonalCollectionsSection({
   onPressVerTodas,
   onExploreSeason,
-}: SeasonalCollectionsSectionProps) {
+}) {
   return (
     <View className="bg-white px-6 py-10">
       <Text className="font-body text-sm italic text-pink-medium">
@@ -84,6 +76,7 @@ export function SeasonalCollectionsSection({
         <Text className="font-heading text-xl text-ink-dark">
           Coleções por Estação
         </Text>
+
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={onPressVerTodas}
@@ -92,6 +85,7 @@ export function SeasonalCollectionsSection({
           <Text className="font-headingMedium text-sm text-pink-dark">
             Ver todas
           </Text>
+
           <Text className="font-headingMedium text-sm text-pink-dark">
             {"›"}
           </Text>
@@ -109,7 +103,9 @@ export function SeasonalCollectionsSection({
               source={{ uri: season.imageUrl }}
               style={StyleSheet.absoluteFill}
               resizeMode="cover"
+              accessibilityLabel={season.title}
             />
+
             <LinearGradient
               colors={season.gradientColors}
               locations={[0, 0.55, 1]}
@@ -121,13 +117,18 @@ export function SeasonalCollectionsSection({
             </View>
 
             <View className="absolute bottom-5 left-5 right-5">
-              <Text className={`font-heading text-xl ${season.titleClassName}`}>
+              <Text
+                className={`font-heading text-xl ${season.titleClassName}`}
+              >
                 {season.title}
               </Text>
+
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={() => onExploreSeason?.(season.id)}
                 className={`mt-3 self-start rounded-full px-5 py-2 outline-none ${season.buttonClassName}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Explorar ${season.title}`}
               >
                 <Text className="font-headingMedium text-sm text-white">
                   Explorar

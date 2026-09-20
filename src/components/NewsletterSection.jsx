@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
-type NewsletterSectionProps = {
-  onSubmitEmail?: (email: string) => void;
-};
-
-export function NewsletterSection({ onSubmitEmail }: NewsletterSectionProps) {
+export function NewsletterSection({ onSubmitEmail }) {
   const [email, setEmail] = useState("");
 
   return (
@@ -18,6 +14,7 @@ export function NewsletterSection({ onSubmitEmail }: NewsletterSectionProps) {
       >
         {"〰"}
       </Text>
+
       <Text className="absolute right-10 top-6 text-2xl text-mint-medium">
         {"✦"}
       </Text>
@@ -25,9 +22,11 @@ export function NewsletterSection({ onSubmitEmail }: NewsletterSectionProps) {
       <Text className="font-body text-sm italic text-pink-medium">
         fique por dentro
       </Text>
+
       <Text className="mt-2 text-center font-heading text-2xl leading-8 text-ink-dark">
         Novas peças chegam todo dia!
       </Text>
+
       <Text className="mt-4 px-2 text-center font-body text-sm leading-5 text-ink-mid">
         Cadastre-se e receba avisos de novas roupinhas no seu bairro, além de
         dicas de moda infantil sustentável.
@@ -41,8 +40,10 @@ export function NewsletterSection({ onSubmitEmail }: NewsletterSectionProps) {
           placeholderTextColor="#b0b0b0"
           keyboardType="email-address"
           autoCapitalize="none"
+          autoCorrect={false}
           className="flex-1 rounded-full border border-pink-medium bg-white px-5 py-3 font-body text-sm text-ink-dark outline-none"
         />
+
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={() => onSubmitEmail?.(email)}
