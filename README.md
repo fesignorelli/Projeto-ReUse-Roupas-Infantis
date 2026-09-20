@@ -364,20 +364,4 @@ Para verificar o funcionamento:
 
 ---
 
-## 🌱 Próximos passos
-
-* Criar a tela de detalhes da peça;
-* Implementar favoritos persistentes;
-* Criar perfil de usuário;
-* Criar autenticação;
-* Implementar chat entre as famílias;
-* Desenvolver o fluxo completo de solicitação;
-* Adicionar confirmação e conclusão da troca;
-* Integrar o aplicativo a um backend;
-* Implementar avaliações entre usuários;
-* Adicionar notificações;
-* Publicar builds para Android e iOS.
-
----
-
 Feito com 💚 para famílias que acreditam em moda infantil sustentável.
