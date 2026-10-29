@@ -246,7 +246,7 @@ export function LoginScreen({
             </Text>
 
             <Text className="mt-1 font-body text-xs leading-5 text-ink-mid">
-              O login usa a API pública Platzi Fake Store. E-mail:{" "}
+              Use esta conta para conhecer o app. E-mail:{" "}
               {DEMO_EMAIL} · Senha: {DEMO_PASSWORD}
             </Text>
 

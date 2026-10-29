@@ -45,7 +45,8 @@ export function ScanQrScreen({ user, onGoBack, onTradeConfirmed }) {
       showAlert(
         "QR Code inválido",
         "Este código não é de uma troca do ReUse.",
-        [{ text: "Tentar de novo", onPress: unlockScanner }]
+        [{ text: "Tentar de novo", onPress: unlockScanner }],
+        { type: "warning" }
       );
       return;
     }
@@ -77,7 +78,8 @@ export function ScanQrScreen({ user, onGoBack, onTradeConfirmed }) {
             text: "Ver troca",
             onPress: () => onTradeConfirmed?.(confirmedTrade),
           },
-        ]
+        ],
+        { type: alreadyConfirmed ? "info" : "success" }
       );
     } catch (error) {
       console.error("Erro ao confirmar troca:", error);
@@ -85,7 +87,8 @@ export function ScanQrScreen({ user, onGoBack, onTradeConfirmed }) {
       showAlert(
         "Não foi possível confirmar",
         "Tente escanear o código novamente.",
-        [{ text: "OK", onPress: unlockScanner }]
+        [{ text: "OK", onPress: unlockScanner }],
+        { type: "error" }
       );
     }
   }

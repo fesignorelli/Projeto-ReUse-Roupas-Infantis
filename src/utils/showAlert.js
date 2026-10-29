@@ -1,37 +1,46 @@
-import { Alert, Platform } from "react-native";
+// Fila de avisos exibidos pelo <AlertHost /> como modal. Mantém a mesma
+// assinatura do Alert.alert, com um quarto parâmetro para o tipo do aviso.
+let queue = [];
+let nextId = 1;
 
-// No react-native-web o Alert.alert não faz nada. Na web usamos
-// window.alert/window.confirm, mantendo os callbacks dos botões.
-export function showAlert(title, message, buttons) {
-  if (Platform.OS !== "web") {
-    Alert.alert(title, message, buttons);
-    return;
-  }
+// Pilha de hosts: só o último montado exibe os avisos. Assim um aviso
+// disparado com outro modal aberto (como a câmera) aparece por cima dele.
+let hosts = [];
 
-  const text = [title, message].filter(Boolean).join("\n\n");
-
-  if (!buttons || buttons.length === 0) {
-    window.alert(text);
-    return;
-  }
-
-  if (buttons.length === 1) {
-    window.alert(text);
-    buttons[0].onPress?.();
-    return;
-  }
-
-  const cancelButton = buttons.find(
-    (button) => button.style === "cancel"
+function notify() {
+  hosts.forEach((host, index) =>
+    host(index === hosts.length - 1 ? queue : [])
   );
+}
 
-  const confirmButton = buttons.find(
-    (button) => button !== cancelButton
-  );
+export function subscribeToAlerts(listener) {
+  hosts = [...hosts, listener];
+  notify();
 
-  if (window.confirm(text)) {
-    confirmButton?.onPress?.();
-  } else {
-    cancelButton?.onPress?.();
-  }
+  return () => {
+    hosts = hosts.filter((host) => host !== listener);
+    notify();
+  };
+}
+
+export function dismissAlert(id) {
+  queue = queue.filter((alert) => alert.id !== id);
+  notify();
+}
+
+// type: "info" | "success" | "warning" | "error"
+export function showAlert(title, message, buttons, { type = "info" } = {}) {
+  queue = [
+    ...queue,
+    {
+      id: nextId++,
+      title,
+      message,
+      type,
+      buttons:
+        buttons && buttons.length > 0 ? buttons : [{ text: "OK" }],
+    },
+  ];
+
+  notify();
 }

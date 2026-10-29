@@ -48,7 +48,9 @@ export function CameraCapture({ onConfirmPhoto, onCancel }) {
 
       showAlert(
         "Não foi possível tirar a foto",
-        "Tente novamente em alguns instantes."
+        "Tente novamente em alguns instantes.",
+        undefined,
+        { type: "error" }
       );
     } finally {
       setCapturing(false);

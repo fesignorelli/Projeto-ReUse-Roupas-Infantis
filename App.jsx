@@ -43,6 +43,7 @@ import {
 
 import { createTrade } from "./src/services/tradeStorage.js";
 import { showAlert } from "./src/utils/showAlert.js";
+import { AlertHost } from "./src/components/AlertHost";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -94,7 +95,9 @@ export default function App() {
 
         showAlert(
           "Não foi possível carregar as peças",
-          "Tente fechar e abrir o aplicativo novamente."
+          "Tente fechar e abrir o aplicativo novamente.",
+          undefined,
+          { type: "error" }
         );
       } finally {
         setLoadingProducts(false);
@@ -201,7 +204,9 @@ export default function App() {
     } catch (error) {
       showAlert(
         "Não foi possível salvar",
-        "Ocorreu um erro ao salvar a peça. Tente novamente."
+        "Ocorreu um erro ao salvar a peça. Tente novamente.",
+        undefined,
+        { type: "error" }
       );
 
       throw error;
@@ -248,7 +253,9 @@ export default function App() {
 
       showAlert(
         "Não foi possível solicitar a troca",
-        "Tente novamente em alguns instantes."
+        "Tente novamente em alguns instantes.",
+        undefined,
+        { type: "error" }
       );
     }
   }
@@ -359,6 +366,8 @@ export default function App() {
         <StatusBar style="dark" />
 
         {renderCurrentScreen()}
+
+        <AlertHost />
       </View>
     </SafeAreaProvider>
   );

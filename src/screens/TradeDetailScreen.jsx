@@ -31,19 +31,8 @@ function formatDateTime(isoDate) {
   });
 }
 
-function describeCo2Source(co2) {
-  if (co2.source === "climatiq") {
-    return co2.fromCache
-      ? "Calculado pela API Climatiq (resultado em cache)."
-      : "Calculado agora pela API Climatiq.";
-  }
-
-  return "Estimativa local com o fator de emissão da Defra (Climatiq indisponível).";
-}
-
 export function TradeDetailScreen({ tradeId, onGoBack, onScanQr }) {
   const [trade, setTrade] = useState(null);
-  const [qrFromCache, setQrFromCache] = useState(false);
   const [co2, setCo2] = useState(null);
   const [loading, setLoading] = useState(true);
   const [qrLoading, setQrLoading] = useState(true);
@@ -79,7 +68,6 @@ export function TradeDetailScreen({ tradeId, onGoBack, onScanQr }) {
         }
 
         setTrade(updatedTrade);
-        setQrFromCache(qrResult.fromCache);
         setCo2(co2Result);
       } catch (error) {
         console.error("Erro ao carregar a troca:", error);
@@ -234,19 +222,19 @@ export function TradeDetailScreen({ tradeId, onGoBack, onScanQr }) {
                 />
               </View>
 
-              <View className="mt-3 flex-row items-center gap-1">
-                <Ionicons
-                  name={qrFromCache ? "save-outline" : "cloud-download-outline"}
-                  size={14}
-                  color="#888888"
-                />
+              {trade.qrImageUri ? (
+                <View className="mt-3 flex-row items-center gap-1">
+                  <Ionicons
+                    name="save-outline"
+                    size={14}
+                    color="#888888"
+                  />
 
-                <Text className="font-body text-xs text-ink-light">
-                  {trade.qrImageUri
-                    ? "QR salvo no aparelho (funciona sem internet)"
-                    : "QR gerado pela API QR Server"}
-                </Text>
-              </View>
+                  <Text className="font-body text-xs text-ink-light">
+                    Disponível mesmo sem internet
+                  </Text>
+                </View>
+              ) : null}
 
               <Text className="mt-1 font-body text-xs text-ink-light">
                 Código da troca: #{trade.id.slice(-6)}
@@ -282,8 +270,7 @@ export function TradeDetailScreen({ tradeId, onGoBack, onScanQr }) {
               <Text className="mt-3 font-body text-xs leading-5 text-ink-mid">
                 Reaproveitar a peça evita produzir uma nova. Peso médio
                 considerado para {trade.productCategory.toLowerCase()}:{" "}
-                {co2.weightKg.toLocaleString("pt-BR")} kg.{" "}
-                {describeCo2Source(co2)}
+                {co2.weightKg.toLocaleString("pt-BR")} kg.
               </Text>
             ) : null}
           </View>

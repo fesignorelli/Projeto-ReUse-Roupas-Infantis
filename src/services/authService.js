@@ -49,22 +49,6 @@ function sanitizeUser({ password, ...user }) {
   return user;
 }
 
-function getErrorMessage(data, fallback) {
-  if (Array.isArray(data.message)) {
-    return data.message.join("\n");
-  }
-
-  return data.message || fallback;
-}
-
-async function readJson(response) {
-  try {
-    return await response.json();
-  } catch {
-    return {};
-  }
-}
-
 async function saveCachedProfile(user) {
   await AsyncStorage.setItem(
     PROFILE_CACHE_KEY,
@@ -180,17 +164,15 @@ export async function login(email, password) {
     }),
   });
 
-  const data = await readJson(response);
-
   if (!response.ok) {
     throw new Error(
       response.status === 401
         ? "E-mail ou senha incorretos."
-        : getErrorMessage(data, "Não foi possível entrar agora.")
+        : "Não foi possível entrar agora. Tente novamente."
     );
   }
 
-  await saveTokens(data);
+  await saveTokens(await response.json());
 
   return fetchCurrentUser();
 }
@@ -214,11 +196,11 @@ export async function register({ name, email, password }) {
     }),
   });
 
-  const data = await readJson(response);
-
   if (!response.ok) {
     throw new Error(
-      getErrorMessage(data, "Não foi possível criar a conta agora.")
+      response.status === 400
+        ? "Não foi possível criar a conta. Confira os dados informados."
+        : "Não foi possível criar a conta agora. Tente novamente."
     );
   }
 

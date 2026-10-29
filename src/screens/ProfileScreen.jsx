@@ -88,7 +88,9 @@ export function ProfileScreen({
 
       showAlert(
         "Não foi possível atualizar",
-        "Verifique sua conexão e tente novamente."
+        "Verifique sua conexão e tente novamente.",
+        undefined,
+        { type: "error" }
       );
     } finally {
       setLoading(false);
@@ -221,8 +223,8 @@ export function ProfileScreen({
               }`}
             >
               {fromCache
-                ? `Dados do cache local (salvos em ${formatSavedAt(savedAt)}). Puxe para atualizar.`
-                : "Dados atualizados agora pela API."}
+                ? `Última atualização em ${formatSavedAt(savedAt)}. Puxe para baixo para atualizar.`
+                : "Dados atualizados agora."}
             </Text>
           </View>
 
