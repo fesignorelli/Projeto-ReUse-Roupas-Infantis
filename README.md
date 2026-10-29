@@ -41,7 +41,15 @@ Atualmente, o aplicativo conta com:
 * Exibição das peças cadastradas no feed;
 * Navegação entre Home, feed e cadastro;
 * Mensagens de carregamento, sucesso e erro;
-* Componentes com recursos básicos de acessibilidade.
+* Componentes com recursos básicos de acessibilidade;
+* Cadastro de usuário, login e logout;
+* Sessão persistente com renovação automática do token;
+* Telas protegidas por login (cadastro de peça, perfil e trocas);
+* Solicitação de troca com QR Code de confirmação;
+* Leitura do QR Code pela câmera para confirmar a troca;
+* Cálculo do CO₂ evitado em cada troca;
+* Preenchimento do bairro pelo CEP;
+* Cache local das respostas das APIs.
 
 ---
 
@@ -113,6 +121,65 @@ Cada peça pode armazenar informações como:
 Com isso, as peças permanecem disponíveis mesmo depois que o aplicativo é fechado e aberto novamente.
 
 As imagens capturadas são copiadas para uma pasta permanente com o `expo-file-system`. O Async Storage guarda os dados do anúncio e o caminho local da imagem.
+
+---
+
+## 🌐 Consumo de APIs
+
+| API | Para que é usada | Tela |
+| --- | --- | --- |
+| [Platzi Fake Store API](https://fakeapi.platzi.com/) | Cadastro de usuário, login, perfil e renovação do token (JWT) | Login, Criar conta, Perfil |
+| [UI Avatars](https://ui-avatars.com/) | Foto de perfil gerada com as iniciais do nome | Criar conta, Perfil |
+| [QR Server](https://goqr.me/api/) | Geração do QR Code de confirmação da troca | Detalhe da troca |
+| [Climatiq](https://www.climatiq.io/) | CO₂ evitado ao reaproveitar a peça em vez de produzir uma nova | Detalhe da troca, Perfil |
+| [ViaCEP](https://viacep.com.br/) | Preenchimento do bairro e da cidade a partir do CEP | Cadastrar peça |
+
+O cálculo do Climatiq usa o fator `consumer_goods-type_clothing_primary_material_production` (Defra/BEIS) e um peso médio por categoria de peça (`src/services/co2Service.js`). Sem a chave do Climatiq, o app usa o mesmo fator de forma local e informa isso na tela.
+
+### Configurando a chave do Climatiq
+
+1. Crie uma conta gratuita em [climatiq.io](https://www.climatiq.io/) e gere uma API key;
+2. Copie `.env.example` para `.env.local`;
+3. Preencha `EXPO_PUBLIC_CLIMATIQ_KEY`;
+4. Reinicie o Expo com `npx expo start --clear`.
+
+> Variáveis com o prefixo `EXPO_PUBLIC_` ficam visíveis dentro do app. Para um projeto acadêmico isso é aceitável; em produção, a chamada deveria passar por um backend.
+
+---
+
+## 🔑 Autenticação e sessões
+
+* **Criar conta e Login:** o usuário se cadastra com nome, e-mail e senha, ou entra com uma conta existente. Conta de demonstração: `john@mail.com` / `changeme`;
+* **Tokens seguros:** o `access_token` e o `refresh_token` são guardados com o `expo-secure-store` (na web, no Async Storage);
+* **Sessão persistente:** ao abrir o app, a sessão salva é restaurada sem pedir login novamente;
+* **Renovação automática:** quando a API responde `401`, o app renova o token com o refresh token e repete a requisição. Se a renovação falhar, o usuário volta para o login;
+* **Telas protegidas:** Cadastrar peça, Perfil, Solicitar troca, Detalhe da troca e Escanear QR exigem login. Depois de entrar, o usuário volta para onde estava;
+* **Logout:** no Perfil, com um modal de confirmação.
+
+---
+
+## ⚡ Caching local
+
+| Item em cache | Onde fica | Validade | Tela |
+| --- | --- | --- | --- |
+| Perfil do usuário | Async Storage | 24 horas (usa o último salvo se estiver sem internet) | Perfil |
+| CO₂ por categoria de peça | Async Storage (`co2:<categoria>`) | 30 dias | Detalhe da troca, Escanear QR |
+| Imagem do QR Code da troca | Arquivo no `expo-file-system` | Enquanto a troca existir | Detalhe da troca |
+| Endereço por CEP | Async Storage (`cep:<cep>`) | 30 dias | Cadastrar peça |
+| Trocas solicitadas e confirmadas | Async Storage (`@reuse:trades`) | Permanente | Perfil, Detalhe da troca |
+
+O cache das respostas fica em `src/services/cache.js`: o dado é salvo com a data, devolvido enquanto estiver dentro da validade e, se a API falhar, o último valor salvo é usado.
+
+---
+
+## 🔁 Fluxo de troca
+
+1. O usuário logado toca em **Solicitar troca** em uma peça;
+2. A tela **Detalhe da troca** mostra o QR Code e o CO₂ que a troca evita;
+3. No encontro, a outra família toca em **Escanear QR para confirmar** e lê o código;
+4. A troca é marcada como confirmada e o CO₂ evitado é somado no **Perfil**.
+
+O QR Code carrega o identificador e os dados da peça, então pode ser lido por outro aparelho mesmo que a troca não esteja salva nele.
 
 ---
 
@@ -212,6 +279,7 @@ Classes configuradas:
 | Armazenamento local      | `@react-native-async-storage/async-storage`                         |
 | Câmera                   | `expo-camera`                                                       |
 | Armazenamento de imagens | `expo-file-system`                                                  |
+| Armazenamento seguro     | `expo-secure-store`                                                 |
 | Ícones                   | `@expo/vector-icons` — Ionicons                                     |
 | Fontes                   | `@expo-google-fonts/montserrat` e `@expo-google-fonts/hind-madurai` |
 | Gradientes               | `expo-linear-gradient`                                              |
@@ -237,6 +305,7 @@ reuse-app/
 │   │   ├── Footer.jsx
 │   │   ├── HeroSection.jsx
 │   │   ├── HowItWorksSection.jsx
+│   │   ├── LogoutConfirmModal.jsx
 │   │   ├── NavBar.jsx
 │   │   ├── NewArrivalsSection.jsx
 │   │   ├── NewsletterSection.jsx
@@ -248,11 +317,25 @@ reuse-app/
 │   ├── screens/
 │   │   ├── CreateProductScreen.jsx
 │   │   ├── HomeScreen.jsx
-│   │   └── ProductsFeedScreen.jsx
+│   │   ├── LoginScreen.jsx
+│   │   ├── ProductsFeedScreen.jsx
+│   │   ├── ProfileScreen.jsx
+│   │   ├── RegisterScreen.jsx
+│   │   ├── ScanQrScreen.jsx
+│   │   └── TradeDetailScreen.jsx
 │   │
-│   └── services/
-│       └── productStorage.js
+│   ├── services/
+│   │   ├── authService.js
+│   │   ├── cache.js
+│   │   ├── cepService.js
+│   │   ├── co2Service.js
+│   │   ├── productStorage.js
+│   │   └── tradeStorage.js
+│   │
+│   └── utils/
+│       └── showAlert.js
 │
+├── .env.example
 ├── App.jsx
 ├── app.json
 ├── babel.config.js
@@ -326,7 +409,7 @@ Para testar a câmera como recurso nativo, recomenda-se executar o projeto em um
 
 ## 🔐 Permissões
 
-O aplicativo solicita acesso à câmera para fotografar as peças cadastradas.
+O aplicativo solicita acesso à câmera para fotografar as peças cadastradas e ler o QR Code das trocas.
 
 A mensagem de permissão está configurada no `app.json`:
 
@@ -336,7 +419,7 @@ A mensagem de permissão está configurada no `app.json`:
     [
       "expo-camera",
       {
-        "cameraPermission": "Permita que o ReUse use a câmera para fotografar as peças cadastradas."
+        "cameraPermission": "Permita que o ReUse use a câmera para fotografar as peças cadastradas e ler o QR Code das trocas."
       }
     ]
   ]
@@ -361,6 +444,16 @@ Para verificar o funcionamento:
 10. Feche completamente o aplicativo;
 11. Abra novamente;
 12. Confirme se a peça e a imagem continuam disponíveis.
+
+### Login, sessão e troca
+
+1. Toque no ícone de perfil e crie uma conta (ou use `john@mail.com` / `changeme`);
+2. Feche e abra o aplicativo: a sessão continua ativa;
+3. No cadastro de peça, digite um CEP e veja o bairro preenchido;
+4. No feed, toque em **Solicitar troca** e veja o QR Code e o CO₂ evitado;
+5. Escaneie o QR Code com outro aparelho (ou abra a versão web no computador e escaneie a tela);
+6. Confira no **Perfil** a troca confirmada e o total de CO₂ evitado;
+7. Toque em **Sair da conta** e confirme no modal.
 
 ---
 

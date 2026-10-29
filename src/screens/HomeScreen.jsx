@@ -17,6 +17,8 @@ export function HomeScreen({
   products = [],
   onExplorarTrocas,
   onCadastrarPeca,
+  onAbrirPerfil,
+  onSolicitarTroca,
 }) {
   function handleNavLink(link) {
     if (link === "Explorar") {
@@ -29,7 +31,10 @@ export function HomeScreen({
       className="flex-1 bg-cream"
       edges={["top", "bottom"]}
     >
-      <NavBar onPressLink={handleNavLink} />
+      <NavBar
+        onPressLink={handleNavLink}
+        onPressUser={onAbrirPerfil}
+      />
 
       <ScrollView
         contentContainerClassName="flex-grow"
@@ -66,9 +71,7 @@ export function HomeScreen({
           onPressFavorite={(productId) => {
             console.log("Favoritar peça:", productId);
           }}
-          onPressSolicitarTroca={(productId) => {
-            console.log("Solicitar troca:", productId);
-          }}
+          onPressSolicitarTroca={onSolicitarTroca}
         />
 
         <TrustSection />

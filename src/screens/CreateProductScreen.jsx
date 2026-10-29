@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -16,6 +16,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 import { CameraCapture } from "../components/CameraCapture";
+import {
+  formatCep,
+  formatLocation,
+  lookupCep,
+  normalizeCep,
+} from "../services/cepService";
+import { showAlert } from "../utils/showAlert";
 
 const CATEGORIES = [
   "Camisetas",
@@ -56,6 +63,36 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
   const [condition, setCondition] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [cep, setCep] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState("");
+
+  async function handleChangeCep(value) {
+    const formattedCep = formatCep(value);
+
+    setCep(formattedCep);
+    setCepError("");
+
+    if (normalizeCep(formattedCep).length !== 8) {
+      return;
+    }
+
+    try {
+      setCepLoading(true);
+
+      const address = await lookupCep(formattedCep);
+
+      setLocation(formatLocation(address));
+    } catch (error) {
+      setCepError(
+        error.message === "Network request failed"
+          ? "Sem conexão para consultar o CEP."
+          : error.message
+      );
+    } finally {
+      setCepLoading(false);
+    }
+  }
 
   function handleConfirmPhoto(capturedPhoto) {
     setPhoto(capturedPhoto);
@@ -64,7 +101,7 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
 
   function validateForm() {
     if (!photo?.uri) {
-      Alert.alert(
+      showAlert(
         "Foto obrigatória",
         "Adicione uma foto da peça antes de continuar."
       );
@@ -73,7 +110,7 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
     }
 
     if (!title.trim()) {
-      Alert.alert(
+      showAlert(
         "Informe o nome",
         "Digite um nome para identificar a peça."
       );
@@ -82,7 +119,7 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
     }
 
     if (!category) {
-      Alert.alert(
+      showAlert(
         "Escolha uma categoria",
         "Selecione a categoria da peça."
       );
@@ -91,7 +128,7 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
     }
 
     if (!size) {
-      Alert.alert(
+      showAlert(
         "Escolha um tamanho",
         "Selecione o tamanho da peça."
       );
@@ -100,7 +137,7 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
     }
 
     if (!condition) {
-      Alert.alert(
+      showAlert(
         "Informe a conservação",
         "Selecione o estado de conservação."
       );
@@ -136,7 +173,7 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
 
     await onSubmitProduct?.(product);
 
-    Alert.alert(
+    showAlert(
       "Peça cadastrada!",
       "Sua peça foi salva no dispositivo.",
       [
@@ -400,6 +437,44 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
                 );
               })}
             </View>
+          </View>
+
+          <View className="mt-6">
+            <Text className="font-headingMedium text-sm text-ink-dark">
+              CEP
+            </Text>
+
+            <View className="mt-2 flex-row items-center rounded-2xl border border-neutralDivider bg-white pr-3">
+              <TextInput
+                value={cep}
+                onChangeText={handleChangeCep}
+                placeholder="00000-000"
+                placeholderTextColor="#b0b0b0"
+                keyboardType="number-pad"
+                maxLength={9}
+                className="flex-1 px-4 py-4 font-body text-sm text-ink-dark outline-none"
+                accessibilityLabel="CEP"
+              />
+
+              {cepLoading ? (
+                <ActivityIndicator color="#e05578" />
+              ) : (
+                <Ionicons
+                  name="location-outline"
+                  size={20}
+                  color="#888888"
+                />
+              )}
+            </View>
+
+            <Text
+              className={`mt-1 font-body text-xs ${
+                cepError ? "text-pink-dark" : "text-ink-light"
+              }`}
+            >
+              {cepError ||
+                "Digite o CEP para preencher o bairro automaticamente (ViaCEP)."}
+            </Text>
           </View>
 
           <View className="mt-6">

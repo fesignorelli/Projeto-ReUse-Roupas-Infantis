@@ -88,7 +88,7 @@ export function ProductCard({
 
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={() => onPressSolicitarTroca?.(product.id)}
+          onPress={() => onPressSolicitarTroca?.(product.id, product)}
           className="mt-4 flex-row items-center justify-center gap-2 rounded-full bg-pink-dark py-3 outline-none"
           accessibilityRole="button"
           accessibilityLabel={`Solicitar troca de ${product.title}`}
