@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   StyleSheet,
   Text,
@@ -10,6 +9,8 @@ import {
   View,
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
+
+import { showAlert } from "../utils/showAlert";
 
 export function CameraCapture({ onConfirmPhoto, onCancel }) {
   const cameraRef = useRef(null);
@@ -45,9 +46,11 @@ export function CameraCapture({ onConfirmPhoto, onCancel }) {
     } catch (error) {
       console.error("Erro ao tirar foto:", error);
 
-      Alert.alert(
+      showAlert(
         "Não foi possível tirar a foto",
-        "Tente novamente em alguns instantes."
+        "Tente novamente em alguns instantes.",
+        undefined,
+        { type: "error" }
       );
     } finally {
       setCapturing(false);

@@ -10,7 +10,14 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Permita que o ReUse use a câmera para fotografar as peças cadastradas."
+          "cameraPermission": "Permita que o ReUse use a câmera para fotografar as peças cadastradas e ler o QR Code das trocas."
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permita que o ReUse acesse suas fotos para anexar imagens das peças."
         }
       ]
     ],

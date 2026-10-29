@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -14,8 +14,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import * as ImagePicker from "expo-image-picker";
 
+import { AlertHost } from "../components/AlertHost";
 import { CameraCapture } from "../components/CameraCapture";
+import { useImageDrop } from "../hooks/useImageDrop";
+import {
+  formatCep,
+  formatLocation,
+  lookupCep,
+  normalizeCep,
+} from "../services/cepService";
+import { showAlert } from "../utils/showAlert";
+import { resizeImageForWeb } from "../utils/webImage";
 
 const CATEGORIES = [
   "Camisetas",
@@ -56,53 +67,133 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
   const [condition, setCondition] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [cep, setCep] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState("");
+
+  async function handleChangeCep(value) {
+    const formattedCep = formatCep(value);
+
+    setCep(formattedCep);
+    setCepError("");
+
+    if (normalizeCep(formattedCep).length !== 8) {
+      return;
+    }
+
+    try {
+      setCepLoading(true);
+
+      const address = await lookupCep(formattedCep);
+
+      setLocation(formatLocation(address));
+    } catch (error) {
+      setCepError(
+        error.message === "Network request failed"
+          ? "Sem conexão para consultar o CEP."
+          : error.message
+      );
+    } finally {
+      setCepLoading(false);
+    }
+  }
+
+  const { dropRef, dragging } = useImageDrop({
+    onImage: setPhoto,
+    onError: (error) =>
+      showAlert("Não foi possível anexar", error.message, undefined, {
+        type: "error",
+      }),
+  });
 
   function handleConfirmPhoto(capturedPhoto) {
     setPhoto(capturedPhoto);
     setCameraOpen(false);
   }
 
+  async function pickFromGallery() {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets?.[0]?.uri) {
+        return;
+      }
+
+      const asset = result.assets[0];
+
+      setPhoto(
+        Platform.OS === "web"
+          ? await resizeImageForWeb(asset.uri)
+          : asset
+      );
+    } catch (error) {
+      console.error("Erro ao escolher imagem:", error);
+
+      showAlert(
+        "Não foi possível anexar",
+        "Tente escolher outra imagem.",
+        undefined,
+        { type: "error" }
+      );
+    }
+  }
+
   function validateForm() {
     if (!photo?.uri) {
-      Alert.alert(
+      showAlert(
         "Foto obrigatória",
-        "Adicione uma foto da peça antes de continuar."
+        "Adicione uma foto da peça antes de continuar.",
+        undefined,
+        { type: "warning" }
       );
 
       return false;
     }
 
     if (!title.trim()) {
-      Alert.alert(
+      showAlert(
         "Informe o nome",
-        "Digite um nome para identificar a peça."
+        "Digite um nome para identificar a peça.",
+        undefined,
+        { type: "warning" }
       );
 
       return false;
     }
 
     if (!category) {
-      Alert.alert(
+      showAlert(
         "Escolha uma categoria",
-        "Selecione a categoria da peça."
+        "Selecione a categoria da peça.",
+        undefined,
+        { type: "warning" }
       );
 
       return false;
     }
 
     if (!size) {
-      Alert.alert(
+      showAlert(
         "Escolha um tamanho",
-        "Selecione o tamanho da peça."
+        "Selecione o tamanho da peça.",
+        undefined,
+        { type: "warning" }
       );
 
       return false;
     }
 
     if (!condition) {
-      Alert.alert(
+      showAlert(
         "Informe a conservação",
-        "Selecione o estado de conservação."
+        "Selecione o estado de conservação.",
+        undefined,
+        { type: "warning" }
       );
 
       return false;
@@ -136,7 +227,7 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
 
     await onSubmitProduct?.(product);
 
-    Alert.alert(
+    showAlert(
       "Peça cadastrada!",
       "Sua peça foi salva no dispositivo.",
       [
@@ -144,7 +235,8 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
           text: "OK",
           onPress: onGoBack,
         },
-      ]
+      ],
+      { type: "success" }
     );
   } catch (error) {
     console.error("Erro ao publicar peça:", error);
@@ -200,73 +292,147 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
           </Text>
 
           <Text className="mt-1 font-body text-xs text-ink-light">
-            Tire uma foto clara e mostre bem o estado da roupa.
+            Tire uma foto ou anexe uma imagem que mostre bem o estado da
+            roupa.
           </Text>
 
-          {photo?.uri ? (
-            <View className="mt-4 overflow-hidden rounded-3xl bg-neutralIcon">
-              <Image
-                source={{ uri: photo.uri }}
-                className="h-72 w-full"
-                resizeMode="cover"
-                accessibilityLabel="Foto da peça cadastrada"
-              />
+          <View ref={dropRef} className="mt-4">
+            {photo?.uri ? (
+              <View className="overflow-hidden rounded-3xl bg-neutralIcon">
+                <Image
+                  source={{ uri: photo.uri }}
+                  className="h-72 w-full"
+                  resizeMode="cover"
+                  accessibilityLabel="Foto da peça cadastrada"
+                />
 
-              <View className="absolute bottom-4 left-4 right-4 flex-row gap-3">
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setCameraOpen(true)}
-                  className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-black/60 py-3"
-                >
+                <View className="absolute bottom-4 left-4 right-4 flex-row gap-3">
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => setCameraOpen(true)}
+                    className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-black/60 py-3"
+                  >
+                    <Ionicons
+                      name="camera-outline"
+                      size={18}
+                      color="#ffffff"
+                    />
+
+                    <Text className="font-headingMedium text-sm text-white">
+                      Câmera
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={pickFromGallery}
+                    className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-black/60 py-3"
+                    accessibilityRole="button"
+                    accessibilityLabel="Trocar pela imagem da galeria"
+                  >
+                    <Ionicons
+                      name="images-outline"
+                      size={18}
+                      color="#ffffff"
+                    />
+
+                    <Text className="font-headingMedium text-sm text-white">
+                      Galeria
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => setPhoto(null)}
+                    className="h-12 w-12 items-center justify-center rounded-full bg-white"
+                    accessibilityLabel="Remover foto"
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={19}
+                      color="#e05578"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View className="items-center justify-center rounded-3xl border-2 border-dashed border-pink-medium bg-pink-xlight px-6 py-8">
+                <View className="h-16 w-16 items-center justify-center rounded-full bg-pink-light">
                   <Ionicons
-                    name="camera-outline"
-                    size={18}
-                    color="#ffffff"
-                  />
-
-                  <Text className="font-headingMedium text-sm text-white">
-                    Trocar foto
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setPhoto(null)}
-                  className="h-12 w-12 items-center justify-center rounded-full bg-white"
-                  accessibilityLabel="Remover foto"
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={19}
+                    name="image-outline"
+                    size={30}
                     color="#e05578"
                   />
-                </TouchableOpacity>
+                </View>
+
+                <Text className="mt-4 text-center font-body text-xs leading-5 text-ink-light">
+                  Posicione a roupa em um local bem iluminado e com fundo
+                  neutro.
+                </Text>
+
+                <View className="mt-5 w-full flex-row gap-3">
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => setCameraOpen(true)}
+                    className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-pink-dark py-3"
+                    accessibilityRole="button"
+                    accessibilityLabel="Tirar foto da peça"
+                  >
+                    <Ionicons
+                      name="camera-outline"
+                      size={18}
+                      color="#ffffff"
+                    />
+
+                    <Text className="font-headingMedium text-sm text-white">
+                      Tirar foto
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={pickFromGallery}
+                    className="flex-1 flex-row items-center justify-center gap-2 rounded-full border border-pink-dark bg-white py-3"
+                    accessibilityRole="button"
+                    accessibilityLabel="Anexar imagem da galeria"
+                  >
+                    <Ionicons
+                      name="images-outline"
+                      size={18}
+                      color="#e05578"
+                    />
+
+                    <Text className="font-headingMedium text-sm text-pink-dark">
+                      Galeria
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {Platform.OS === "web" ? (
+                  <Text className="mt-4 text-center font-body text-xs text-ink-light">
+                    ou arraste uma imagem até aqui
+                  </Text>
+                ) : null}
               </View>
-            </View>
-          ) : (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setCameraOpen(true)}
-              className="mt-4 h-64 items-center justify-center rounded-3xl border-2 border-dashed border-pink-medium bg-pink-xlight px-6"
-            >
-              <View className="h-16 w-16 items-center justify-center rounded-full bg-pink-light">
+            )}
+
+            {dragging ? (
+              <View
+                pointerEvents="none"
+                className="absolute inset-0 items-center justify-center rounded-3xl border-2 border-dashed border-pink-dark bg-pink-light/90"
+              >
                 <Ionicons
-                  name="camera-outline"
-                  size={30}
+                  name="cloud-upload-outline"
+                  size={36}
                   color="#e05578"
                 />
+
+                <Text className="mt-2 font-headingMedium text-base text-pink-dark">
+                  Solte a imagem para anexar
+                </Text>
               </View>
-
-              <Text className="mt-4 font-headingMedium text-base text-pink-dark">
-                Tirar foto da peça
-              </Text>
-
-              <Text className="mt-2 text-center font-body text-xs leading-5 text-ink-light">
-                Posicione a roupa em um local bem iluminado e com fundo
-                neutro.
-              </Text>
-            </TouchableOpacity>
-          )}
+            ) : null}
+          </View>
 
           <View className="mt-7">
             <Text className="font-headingMedium text-sm text-ink-dark">
@@ -404,6 +570,44 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
 
           <View className="mt-6">
             <Text className="font-headingMedium text-sm text-ink-dark">
+              CEP
+            </Text>
+
+            <View className="mt-2 flex-row items-center rounded-2xl border border-neutralDivider bg-white pr-3">
+              <TextInput
+                value={cep}
+                onChangeText={handleChangeCep}
+                placeholder="00000-000"
+                placeholderTextColor="#b0b0b0"
+                keyboardType="number-pad"
+                maxLength={9}
+                className="flex-1 px-4 py-4 font-body text-sm text-ink-dark outline-none"
+                accessibilityLabel="CEP"
+              />
+
+              {cepLoading ? (
+                <ActivityIndicator color="#e05578" />
+              ) : (
+                <Ionicons
+                  name="location-outline"
+                  size={20}
+                  color="#888888"
+                />
+              )}
+            </View>
+
+            <Text
+              className={`mt-1 font-body text-xs ${
+                cepError ? "text-pink-dark" : "text-ink-light"
+              }`}
+            >
+              {cepError ||
+                "Digite o CEP para preencher o bairro automaticamente."}
+            </Text>
+          </View>
+
+          <View className="mt-6">
+            <Text className="font-headingMedium text-sm text-ink-dark">
               Bairro ou localização
             </Text>
 
@@ -465,6 +669,8 @@ export function CreateProductScreen({ onGoBack, onSubmitProduct }) {
           onCancel={() => setCameraOpen(false)}
           onConfirmPhoto={handleConfirmPhoto}
         />
+
+        <AlertHost />
       </Modal>
     </SafeAreaView>
   );
